@@ -1,7 +1,9 @@
 import math
 import numpy as np
-from acs_toolbox.constants.celestial_constants import *
-from acs_toolbox.constants.time_constants import *
+from acstoolbox.constants.celestial_constants import *
+from acstoolbox.constants.time_constants import *
+from acstoolbox.time import time
+from acstoolbox.constants.time_constants import *
 
 def strsign2float(str):
     if str == '-':
@@ -10,21 +12,26 @@ def strsign2float(str):
     # '+' or ' '
     return +1.0
 
-def TLEParametersFromFile(tle_filepath):
+def TLEParametersFromFile(tle_filepath, century):
     tle_param = {}
     
     with open(tle_filepath) as opened_file:
         tle_contents = opened_file.readlines()
     
-    tle_param['bstar'] = strsign2float(tle_contents[0][53])*float("0."+tle_contents[0][54:59]) * 10**(strsign2float(tle_contents[0][59])*float(tle_contents[0][60]))
-    tle_param['inclination'] = float(tle_contents[1][8:15])/180.0*np.pi
-    tle_param['argument_perigee'] = float(tle_contents[1][34:42])/180.0*np.pi
-    tle_param['eccentricity'] = float("0."+tle_contents[1][26:34])
-    tle_param['right_ascension'] = float(tle_contents[1][17:25])/180.0*np.pi
-    tle_param['mean_anomaly'] = float(tle_contents[1][43:51])/180.0*np.pi
-    tle_param['mean_motion'] = float(tle_contents[1][52:63])*2*np.pi/1440
-    tle_param['year'] = float('20' + tle_contents[0][18:20])
-    tle_param['fractional_day'] = float(tle_contents[0][20:32])
+        tle_param['bstar'] = strsign2float(tle_contents[0][53])*float("0."+tle_contents[0][54:59]) * 10**(strsign2float(tle_contents[0][59])*float(tle_contents[0][60]))
+        tle_param['inclination'] = float(tle_contents[1][8:15])/180.0*np.pi
+        tle_param['argument_perigee'] = float(tle_contents[1][34:42])/180.0*np.pi
+        tle_param['eccentricity'] = float("0."+tle_contents[1][26:34])
+        tle_param['right_ascension'] = float(tle_contents[1][17:25])/180.0*np.pi
+        tle_param['mean_anomaly'] = float(tle_contents[1][43:51])/180.0*np.pi
+        tle_param['mean_motion'] = float(tle_contents[1][52:63])*2*np.pi/1440
+        tle_param['year'] = float(str(int(century/100)) + tle_contents[0][18:20])
+        tle_param['fractional_days'] = float(tle_contents[0][20:32])
+
+        jd_utc = time.YearFractionalDaystoJDUTC(tle_param['year'], tle_param['fractional_days'])
+        tle_param['epoch_jsj2000_utc'] = (jd_utc - kJDJ2000) * kDayInSeconds
+
+        
 
     return tle_param
 
