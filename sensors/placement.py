@@ -53,12 +53,14 @@ class CelestialSphere:
         self._dtheta = 10**(-self._n)
         self._dphi = 10**(-self._n)
         self._B = np.zeros((int(np.pi/self._dphi) + 1, int(2*np.pi/self._dtheta) + 1))
+        self._px = 0
+        self._nx = 0
 
     def polarplot(self):
         fig2d = plt.figure(2, figsize=(12,6))
         ax = fig2d.gca()
         ax.imshow(self._B, cmap='RdPu', vmin=0, vmax=255)
-        plt.title("Plot 2D array")
+        plt.title("Area Projections on Polar Plot")
         plt.xticks([0, theta_tick(np.pi/2, self._dtheta), theta_tick(np.pi, self._dtheta), theta_tick(1.5*np.pi, self._dtheta), theta_tick(2*np.pi, self._dtheta)],['0', '$\\frac{\pi}{2}$', '$\pi$', '$\\frac{3\pi}{2}$', '$2\pi$'])
         plt.yticks([0, phi_tick(np.pi/4, self._dphi), phi_tick(np.pi/2, self._dphi), phi_tick(0.75*np.pi, self._dphi), phi_tick(np.pi, self._dphi)],['0', '$\\frac{\pi}{4}$', '$\\frac{\pi}{2}$', '$\\frac{3\pi}{4}$', '$\pi$'])
 
@@ -146,6 +148,14 @@ class CelestialSphere:
             if theta != None:
                 ttheta = round(theta, self._n)
                 theta_index = round(ttheta/self._dtheta)
+            else:
+                if (v.dot(np.array([0,0,1])) == 1.0):
+                    self._px = 1
+                    continue
+                elif (v.dot(np.array([0,0,-1])) == 1.0):
+                    self._nx = 1
+                    continue
+
             if (val.real):
                 self._B[phi_index, theta_index] = val.imag + self._B[phi_index, theta_index]
             else:
