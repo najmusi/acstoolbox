@@ -45,7 +45,30 @@ def DayofYear(yyyy, mm, dd, h, m, s):
 
     return days
 
+def YearFractionalDaystoJDUTC(yyyy, total_fractional_days):
+    days_per_month = GetDaysInEachMonth()
+    if IsLeapYear(yyyy):
+        days_per_month[1] = 29
     
+    mm = 0
+    full_months_in_days = 0
+    for month in np.linspace(0,11,12):
+        days_up_to_month_end = sum(days_per_month[0:int(month+1)])
+        if (days_up_to_month_end > total_fractional_days):
+            mm = month + 1
+            if (month > 0):
+                full_months_in_days = sum(days_per_month[0:(int(month))])
+            break
+    print(f"full: {full_months_in_days}")
+    fractional_days_remaining = total_fractional_days - full_months_in_days
+    dd = math.floor(fractional_days_remaining)
+
+    print(f"month: {mm}, day: {dd}, fract: {fractional_days_remaining-dd}")
+    return UTCFractionalDayToJDUTC(yyyy, mm, dd, fractional_days_remaining - dd)    
+
+def UTCFractionalDayToJDUTC(y,m,d, fractional_day):
+    return (367 * y - int(7 * (y + int((m + 9)/12))/4) + int(275 * m/9) + d + 1721013.5 + fractional_day)
+
 
 def GetdATTable():
     return {'57754.0': 37}
