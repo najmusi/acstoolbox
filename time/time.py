@@ -1,4 +1,4 @@
-from acs_toolbox.constants.time_constants import *
+from acstoolbox.constants.time_constants import *
 import math
 import numpy as np
 import os
@@ -6,7 +6,7 @@ import pandas as pd
 
 def ConstructEarthObservationParameterTables():
     # TODO: Convirm infer_nrows to determine negative values of columns
-    eop_file = os.getcwd() + "/time/EOP.txt"
+    eop_file = os.getcwd() + "/EOP.txt"
     header_list = ['year', 'month', 'date', 'mjd', 'x_arcsec', 'y_arcsec',
                    'dUT1_s', 'LOD_s', 'dX_arcsec', 'dY_arcsec', 'x_Err_arcsec',
                    'y_err_arcsec', 'dUT1_err_s', 'LOD_err_s', 'dX_err_arcsec',
