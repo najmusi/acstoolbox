@@ -1,8 +1,15 @@
-__all__ = ['kMJD_Offset', 'kJDJ2000', 'kDayInSeconds', 'kCenturyInJulianDays', 'kdTTs', 'kDayInMinutes']
+__all__ = [
+    "MODIFIED_JULIAN_DATE_OFFSET",
+    "JD_J2000",
+    "DAY_IN_SECONDS",
+    "kCenturyInJulianDays",
+    "ATOMIC_TO_TERRESTRIAL_S",
+    "kDayInMinutes",
+]
 
-kMJD_Offset = 2400000.5
-kJDJ2000 = 2451545.0
-kDayInSeconds = 86400
+MODIFIED_JULIAN_DATE_OFFSET = 2400000.5
+JD_J2000 = 2451545.0  # Terrestrial time
+DAY_IN_SECONDS = 86400
 kCenturyInJulianDays = 36525
-kdTTs = 32.184
+ATOMIC_TO_TERRESTRIAL_S = 32.184
 kDayInMinutes = 1440
