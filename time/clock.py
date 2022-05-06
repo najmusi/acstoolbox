@@ -5,6 +5,12 @@ import numpy as np
 import os
 import pandas as pd
 
+# TODO
+# 1. Use 61 instead of 60 in JD when the day includes a leap second (confirm for all frames)
+# 1. Add check to JD when the formula becomes invalid
+# 1. Confirm in UTCGregorianToTTSeconds if 1 JD in TT (or TAI) have 86400s
+# 1. UTCGregorianToTTSeconds must use modified julian dates because of overflow
+
 
 def ConstructEarthObservationParameterTables():
     # TODO: Confirm infer_nrows to determine negative values of columns
@@ -160,26 +166,36 @@ class Clock:
 
         return js_from_j2000_utc + dut1_s
 
-    def UTCGregoriantoTAIJD(self, gregorian):
-        jd_utc = self.GregorianToJulianDate(gregorian)
-        dat_s = self.GetdATfromGregorian(gregorian)
+    def UTCGregoriantoTAIJD(self, gregorian_utc):
+        dat_s = self.GetdATfromGregorian(gregorian_utc)
 
-        return jd_utc + dat_s / DAY_IN_SECONDS
+        # Add the leap second offset to the UTC seconds.
+        # Valid addition since the JD conversion divides the seconds by 60 (61) to sum minutes.
+        gregorian_tai = gregorian_utc
+        gregorian_tai[5] = gregorian_tai[5] + dat_s
+
+        return self.GregorianToJulianDate(gregorian_tai)
 
     def TAIstoTTs(self, tai_s):
         return tai_s + ATOMIC_TO_TERRESTRIAL_S
 
-    def UTCGregorianToTTSeconds(self, gregorian):
-        jd_tai = self.UTCGregoriantoTAIJD(gregorian)
+    def UTCGregorianToTTSeconds(self, gregorian_utc):
+        jd_tai = self.UTCGregoriantoTAIJD(gregorian_utc)
 
-        return self.TAIstoTTs(jd_tai * DAY_IN_SECONDS)
+        # TT and TAI both have 86400 s in 1 day.
+        # return self.TAIstoTTs(jd_tai * DAY_IN_SECONDS)
+        return jd_tai * DAY_IN_SECONDS
 
-    def UTCGregotianToJDUT1(self, gregorian):
-        jd_utc = self.GregorianToJulianDate(gregorian)
+    def UTCGregotianToTUT1(self, gregorian_utc):
+        jd_utc = self.GregorianToJulianDate(gregorian_utc)
         mjd_utc = self.MJD(jd_utc)
         dut1_s = self.GetEarthObservationParameter(mjd_utc, "dUT1_s")
 
-        jd_ut1 = jd_utc + dut1_s / DAY_IN_SECONDS
+        # Add the UT1 offset to the UTC seconds.
+        # Valid addition since the JD conversion divides the seconds by 60 (61) to sum minutes.
+        gregorian_ut1 = gregorian_utc
+        gregorian_ut1[5] = gregorian_ut1[5] + dut1_s
+        jd_ut1 = self.GregorianToJulianDate(gregorian_ut1)
 
         return self.JDToT(jd_ut1)
 
