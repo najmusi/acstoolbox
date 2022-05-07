@@ -1,4 +1,4 @@
-from acstoolbox.time.time import Clock
+from acstoolbox.time.clock import Clock
 from acstoolbox.constants.time_constants import (
     DAY_IN_SECONDS,
     JD_J2000,
@@ -9,11 +9,14 @@ import numpy as np
 import pytest as pytest
 
 # TODO
-# 1. Load clock once in fixture
+# 1. Use a fixture which loads a single Clock object
 # 1. Confirm if GetdUT1fromGregorian and UTCGregotianToJDUT1 can be removed.
 # 1. Confirm if self methods can be converted to cls methods
 # 1. In test_julian_centuries add reference for epoch_centuries_from_j2000
 # 1. In test_julian_date test for each before/after epoch when a leap second is added
+# 1. JSJ2000 methods use the TT DAY_IN_SECONDS which may not be valid for UTC, UT1, etc.
+# 1. Reference for Julian Centuries test
+# 1. test_utc_to_seconds_in_tt suffers from overflow and doesn't pass assert
 
 # Additional tests to add.
 # 1. EOP lookup for date that is out of bounds
@@ -31,7 +34,7 @@ def test_gregorian_to_julian_date():
 
 
 # GregorianToJSJ2000
-# Convert Gregorian to Julian seconds from J2000.
+# Convert Gregorian date to Julian seconds from J2000.
 def test_gregorian_to_julian_seconds_from_j2000():
     # JS from J2000 for January 1, 2022 00hh00mm00ss UTC.
     JD_EPOCH = 2459580.5
@@ -69,12 +72,12 @@ def test_modified_julian_date():
 # JDToT
 # Evaluate Julian Centuries from J2000
 def test_julian_centuries():
-    # Initialize clock and set the epoch to April 24, 2022 00hh00mm00ss.
+    # Initialize clock and set Julian centuries for April 24, 2022 00hh00mm00ss.
     clock = Clock()
-    epoch_gregorian = [2022, 4, 24, 0, 0, 0]
     epoch_centuries_from_j2000 = 0.22309377138945
 
     # Julian centuries evaluated from JD is equivalent to known quantity.
+    epoch_gregorian = [2022, 4, 24, 0, 0, 0]
     epoch_jd = clock.GregorianToJulianDate(epoch_gregorian)
     assert clock.JDToT(epoch_jd) == pytest.approx(epoch_centuries_from_j2000, 1e-6)
 
@@ -95,16 +98,17 @@ def test_gregorianutc_to_jsj2000ut1():
     )
 
 
-# UTCGregotianToJDUT1
+# UTCGregotianToTUT1
 # Evaluate conversion from UTC Gregorian to UT1 JD.
-def test_utc_gregorian_to_ut1_jd():
-    # Initialize clock and set the epoch to March 24, 2022 12hh00mm00ss.
+def test_utc_gregorian_to_ut1_centuries():
+    # Initialize clock and set the epoch to March 24, 2022 12hh02mm00ss.
     clock = Clock()
-    epoch_gregorian = [2022, 3, 24, 12, 0, 0]
+    epoch_gregorian_UTC = [2022, 3, 24, 12, 1, 60]
     dUT1_s = (-0.1005632 - 0.1001852) / 2.0  # MJD of 59662.5.
 
-    clock.UTCGregotianToJDUT1(epoch_gregorian) == (
-        clock.GregorianToJulianDate(epoch_gregorian) + dUT1_s / DAY_IN_SECONDS
+    epoch_gregorian_UT1 = [2022, 3, 24, 12, 1, (60 + dUT1_s)]
+    assert clock.UTCGregotianToTUT1(epoch_gregorian_UTC) == clock.JDToT(
+        clock.GregorianToJulianDate(epoch_gregorian_UT1)
     )
 
 
@@ -112,30 +116,36 @@ def test_utc_gregorian_to_ut1_jd():
 # Evaluate conversion from UTC Gregorian to TAI Julian Date.
 # This is also a test for a leap second lookup.
 def test_utc_to_jd_in_tai():
-    # Initialize clock and set the epoch to March 24, 2022 12hh00mm00ss.
+    # Initialize clock and set the epoch to March 24, 2022 12hh02mm00ss.
     clock = Clock()
-    epoch_gregorian = [2022, 3, 24, 12, 0, 0]
-    epoch_jd = clock.GregorianToJulianDate(epoch_gregorian)
+    epoch_gregorian_utc = [2022, 3, 24, 12, 1, 60]
+    epoch_jd = clock.GregorianToJulianDate(epoch_gregorian_utc)
     dAT_s = -37  # MJD of 59662.5.
 
-    clock.UTCGregoriantoTAIJD(epoch_gregorian) == epoch_jd + dAT_s / DAY_IN_SECONDS
+    epoch_gregorian_tai = [2022, 3, 24, 12, 1, (60 + dAT_s)]
+    assert clock.UTCGregoriantoTAIJD(
+        epoch_gregorian_utc
+    ) == clock.GregorianToJulianDate(epoch_gregorian_tai)
 
 
 # TAIstoTTs
 # Evaluate offset from Atomic to Terrestrial time.
 def test_utc_to_jd_in_tai():
     clock = Clock()
-    clock.TAIstoTTs(0.0) == ATOMIC_TO_TERRESTRIAL_S
+    assert clock.TAIstoTTs(0.0) == ATOMIC_TO_TERRESTRIAL_S
 
 
 # UTCGregorianToTTSeconds
 # Evaluate conversion from UTC Gregorian to Seconds in Terrestrial Time.
 def test_utc_to_seconds_in_tt():
     clock = Clock()
-    epoch_gregorian_UTC = [2000, 1, 1, 12, 0, 0, 0]
-    assert clock.UTCGregorianToTTSeconds(epoch_gregorian_UTC) == (
-        (JD_J2000 * DAY_IN_SECONDS + 32) + ATOMIC_TO_TERRESTRIAL_S
-    )
+    epoch_gregorian_utc = [2000, 1, 1, 12, 0, 0]
+    dat_s = 32
+
+    epoch_gregorian_tt = epoch_gregorian_utc
+    epoch_gregorian_tt[5] = epoch_gregorian_tt[5] + dat_s + ATOMIC_TO_TERRESTRIAL_S
+    epoch_seconds_tt = clock.GregorianToJulianDate(epoch_gregorian_tt) * DAY_IN_SECONDS
+    clock.UTCGregorianToTTSeconds(epoch_gregorian_utc) == epoch_seconds_tt
 
 
 # GetdUT1fromGregorian
