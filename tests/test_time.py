@@ -67,6 +67,7 @@ def test_modified_julian_date():
     # Initialize clock and evaluate MJD for J2000.
     clock = Clock()
     assert clock.MJD(JD_J2000) == (JD_J2000 - MODIFIED_JULIAN_DATE_OFFSET)
+    assert 1 == 1
 
 
 # JDToT
